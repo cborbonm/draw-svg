@@ -283,7 +283,86 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
   // Task 0: 
   // Implement Bresenham's algorithm (delete the line below and implement your own)
-  ref->rasterize_line_helper(x0, y0, x1, y1, width, height, color, this);
+  //ref->rasterize_line_helper(x0, y0, x1, y1, width, height, color, this);
+
+  int dx = x1 - x0;
+  if (dx < 0) {
+    int temp = x1;
+    x1 = x0;
+    x0 = temp;
+
+    temp = y1;
+    y1 = y0;
+    y0 = temp;
+
+    dx *= -1;
+  }
+
+  int dy = y1 - y0;
+  int y = y0;
+  int eps = 0;
+  float m = (float)dy / (float)dx;
+  float eps1 = 0.0;
+
+  if (m > -1 && m < 1) {
+    for (int x = x0; x <= x1; x++) {
+      rasterize_point(x, y, color);
+
+      // CASE: Positive Slope
+      if (m >= 0.0) {
+        eps += dy;
+        // shifting error 1 to the left == multiplying error by 2 
+        if ((eps << 1) >= dx) {
+          y++;  
+          eps -= dx;
+        }
+
+      // CASE: Negative Slope
+      } else {
+        eps1 += m;
+        if (eps1 <= -0.5) {
+          y--;
+          eps1++;
+        }
+      }
+    }
+  } else {
+    // if (dy < 0) {
+    //   int temp = x1;
+    //   x1 = x0;
+    //   x0 = temp;
+
+    //   temp = y1;
+    //   y1 = y0;
+    //   y0 = temp;
+
+    //   dy *= -1;
+    //   dx *= -1;
+    // }
+
+    int x = x0;
+    for (int y = y0; y <= y1; y++) {
+      rasterize_point(x, y, color);
+
+      // CASE: Positive Slope
+      if (m >= 0.0) {
+        eps += dx;
+        // shifting error 1 to the left == multiplying error by 2 
+        if ((eps << 1) >= dy) {
+          x++;  
+          eps -= dy;
+        }
+
+      // CASE: Negative Slope
+      } else {
+        eps1 += m;
+        if (eps1 <= -0.5) {
+          x--;
+          eps1++;
+        }
+      }
+    }
+  }
 
   // Advanced Task
   // Drawing Smooth Lines with Line Width

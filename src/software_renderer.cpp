@@ -287,7 +287,7 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
   int dx = x1 - x0;
   if (dx < 0) {
-    int temp = x1;
+    float temp = x1;
     x1 = x0;
     x0 = temp;
 
@@ -299,19 +299,19 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   }
 
   int dy = y1 - y0;
-  int y = y0;
   int eps = 0;
   float m = (float)dy / (float)dx;
-  float eps1 = 0.0;
+  float eps_fl = 0.0;
 
-  if (m > -1 && m < 1) {
+  if (m >= -1 && m <= 1) {
+    int y = y0;
     for (int x = x0; x <= x1; x++) {
       rasterize_point(x, y, color);
 
       // CASE: Positive Slope
       if (m >= 0.0) {
         eps += dy;
-        // shifting error 1 to the left == multiplying error by 2 
+        // Multiplication by 2 can be implemented by left-shift 
         if ((eps << 1) >= dx) {
           y++;  
           eps -= dx;
@@ -319,35 +319,36 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
       // CASE: Negative Slope
       } else {
-        eps1 += m;
-        if (eps1 <= -0.5) {
+        eps_fl += m;
+        if (eps_fl <= -0.5) {
           y--;
-          eps1++;
+          eps_fl++;
         }
       }
     }
   } else {
-    // if (dy < 0) {
-    //   int temp = x1;
-    //   x1 = x0;
-    //   x0 = temp;
+    if (dy < 0) {
+      float temp = x1;
+      x1 = x0;
+      x0 = temp;
 
-    //   temp = y1;
-    //   y1 = y0;
-    //   y0 = temp;
+      temp = y1;
+      y1 = y0;
+      y0 = temp;
 
-    //   dy *= -1;
-    //   dx *= -1;
-    // }
-
+      dy *= -1;
+      dx *= -1;
+      m = (float)dx / (float)dy;
+    }
     int x = x0;
+
     for (int y = y0; y <= y1; y++) {
       rasterize_point(x, y, color);
 
       // CASE: Positive Slope
       if (m >= 0.0) {
         eps += dx;
-        // shifting error 1 to the left == multiplying error by 2 
+        // Multiplication by 2 can be implemented by left-shift 
         if ((eps << 1) >= dy) {
           x++;  
           eps -= dy;
@@ -355,10 +356,10 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
       // CASE: Negative Slope
       } else {
-        eps1 += m;
-        if (eps1 <= -0.5) {
+        eps_fl += m;
+        if (eps_fl <= -0.5) {
           x--;
-          eps1++;
+          eps_fl++;
         }
       }
     }

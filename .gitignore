@@ -1,3 +1,7 @@
 .DS_Store
 lib/
 build/
+
+# Ignore renamed file
+src/reference/libdrawsvgref_osx.a
+src/reference/libdrawsvgref_osx_M1.a

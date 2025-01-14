@@ -285,7 +285,7 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   // Implement Bresenham's algorithm (delete the line below and implement your own)
   //ref->rasterize_line_helper(x0, y0, x1, y1, width, height, color, this);
 
-  int dx = x1 - x0;
+  float dx = x1 - x0;
   if (dx < 0) {
     float temp = x1;
     x1 = x0;
@@ -298,14 +298,14 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
     dx *= -1;
   }
 
-  int dy = y1 - y0;
+  float dy = y1 - y0;
   int eps = 0;
-  float m = (float)dy / (float)dx;
+  float m = dy / dx;
   float eps_fl = 0.0;
 
   if (m >= -1 && m <= 1) {
-    int y = y0;
-    for (int x = x0; x <= x1; x++) {
+    float y = y0;
+    for (float x = x0; x <= x1; x++) {
       rasterize_point(x, y, color);
 
       // CASE: Positive Slope
@@ -338,11 +338,11 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
       dy *= -1;
       dx *= -1;
-      m = (float)dx / (float)dy;
+      m = dx / dy;
     }
-    int x = x0;
+    float x = x0;
 
-    for (int y = y0; y <= y1; y++) {
+    for (float y = y0; y <= y1; y++) {
       rasterize_point(x, y, color);
 
       // CASE: Positive Slope

@@ -369,12 +369,51 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   // Drawing Smooth Lines with Line Width
 }
 
+std::vector<float> SoftwareRendererImp::compute_line_coefficients(float x0, float y0, float x1, float y1) {
+  std::vector<float> line_coefficients
+  float A = y1 - y0;
+  float B = x0 - x1;
+  float C = (y0 * (x1 - x0)) + (x0 * (y1 - y0));
+  line_coefficients.push_back(A);
+  line_coefficients.push_back(B);
+  line_coefficients.push_back(C);
+
+  return line_coefficients;
+}
+
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               float x1, float y1,
                                               float x2, float y2,
                                               Color color ) {
   // Task 1: 
   // Implement triangle rasterization
+
+  // Step 1: compute boundary box
+  // boundary = the minimum x/y coord to the max x/y coord
+  float xmin = min(x0, x1, x2);
+  float xmax = max(x0, x1, x2);
+  float ymin = min(y0, y1, y2);
+  float ymin = max(y0, y1, y2);
+
+  // Step 2: compute coefficients for each line 
+  std::vector<float> L01 = compute_line_coefficients(x0, y0, x1, y1);
+  std::vector<float> L12 = compute_line_coefficients(x1, y1, x2, y2);
+  std::vector<float> L20 = compute_line_coefficients(x2, y2, x0, y0);
+
+  // Step 3: for all pixels 
+    // compute center of the pixel (x + 0.5, y + 0.5) except for last col
+    // determine whether pixel center is in triangle 
+  
+  // point in triangle text:
+  // Ai = Yi+1 - Yi
+  // Bi = Xi - Xi+1 
+  // Ci = Yi(Xi+1 - Xi) - Xi(Yi+1 - Yi)
+  // Li(xi, yi) = Aix + Biy + Ci
+  // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
+
+  // if the pixel center point is in the the triangle, call fill_pixel
+  // fill_pixel(int x, int y, const Color &color)
+
 
   // Advanced Task
   // Implementing Triangle Edge Rules

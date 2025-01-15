@@ -138,6 +138,9 @@ private:
 		float x1, float y1,
 		Color color);
 
+	// compute the coefficients for the triangle line equation
+	std::vector<float> compute_line_coefficients(float x0, float y0, float x1, float y1);
+
 	// rasterize a triangle
 	void rasterize_triangle(float x0, float y0,
 		float x1, float y1,

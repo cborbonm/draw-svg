@@ -370,7 +370,7 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 }
 
 std::vector<float> SoftwareRendererImp::compute_line_coefficients(float x0, float y0, float x1, float y1) {
-  std::vector<float> line_coefficients
+  std::vector<float> line_coefficients;
   float A = y1 - y0;
   float B = x0 - x1;
   float C = (y0 * (x1 - x0)) + (x0 * (y1 - y0));
@@ -393,7 +393,7 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   float xmin = min(x0, x1, x2);
   float xmax = max(x0, x1, x2);
   float ymin = min(y0, y1, y2);
-  float ymin = max(y0, y1, y2);
+  float ymax = max(y0, y1, y2);
 
   // Step 2: compute coefficients for each line 
   std::vector<float> L01 = compute_line_coefficients(x0, y0, x1, y1);
@@ -401,18 +401,23 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   std::vector<float> L20 = compute_line_coefficients(x2, y2, x0, y0);
 
   // Step 3: for all pixels 
-    // compute center of the pixel (x + 0.5, y + 0.5) except for last col
-    // determine whether pixel center is in triangle 
-  
-  // point in triangle text:
-  // Ai = Yi+1 - Yi
-  // Bi = Xi - Xi+1 
-  // Ci = Yi(Xi+1 - Xi) - Xi(Yi+1 - Yi)
-  // Li(xi, yi) = Aix + Biy + Ci
-  // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
+  for (int xsample = floor(xmin); xsample <= floor(xmax); xsample++) {
+    for (int ysample = floor(ymin); ysample <= floor(ymax); ysample++) {
+      // compute center of the pixel (x + 0.5, y + 0.5) using floor of values
+      float xcenter = floor(xsample) + 0.5f;
+      float ycenter = floor(ysample) + 0.5f; 
 
-  // if the pixel center point is in the the triangle, call fill_pixel
-  // fill_pixel(int x, int y, const Color &color)
+      // determine whether pixel center is in triangle 
+      // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
+      if (((L01[0] * xcenter) + (L01[1] * ycenter) + L01[2]) < 0) {
+        if (((L12[0] * xcenter) + (L12[1] * ycenter) + L12[2]) < 0) {
+          if (((L20[0] * xcenter) + (L20[1] * ycenter) + L20[2]) < 0) {
+            fill_pixel(xsample, ysample, color);
+          }
+        }
+      }
+    }
+  }
 
 
   // Advanced Task

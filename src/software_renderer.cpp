@@ -391,23 +391,6 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   float ymin = y0 < y1? (y0 < y2 ? y0 : y2) : (y1 < y2 ? y1 : y2);
   float ymax = y0 > y1? (y0 > y2 ? y0 : y2) : (y1 > y2 ? y1 : y2);
 
-  // make sure we always start at leftmost vertex
-  if (xmin == x1) {
-    float temp = x0;
-    x0 = x1;
-    x1 = temp;
-    temp = y0;
-    y0 = y1;
-    y1 = temp;
-  } else if (xmin == x2) {
-    float temp = x0;
-    x0 = x2;
-    x2 = temp;
-    temp = y0;
-    y0 = y2;
-    y2 = temp;
-  }
-
   // if vertices are clock-wise, switch points 1 and 2
   float orientation = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
   if (orientation < 0) {

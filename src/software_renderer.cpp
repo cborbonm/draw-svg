@@ -395,6 +395,22 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   float ymin = y0 < y1? (y0 < y2 ? y0 : y2) : (y1 < y2 ? y1 : y2);  //min(y0, y1, y2);
   float ymax = y0 > y1? (y0 > y2 ? y0 : y2) : (y1 > y2 ? y1 : y2);  //max(y0, y1, y2);
 
+  if (xmin == x1) {
+    float temp = x0;
+    x0 = x1;
+    x1 = temp;
+    temp = y0;
+    y0 = y1;
+    y1 = temp;
+  } else if (xmin == x2) {
+    float temp = x0;
+    x0 = x2;
+    x2 = temp;
+    temp = y0;
+    y0 = y2;
+    y2 = temp;
+  }
+
   // if counterclock-wise, switch points 1 and 2
   float orientation = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
   if (orientation > 0) {
@@ -407,9 +423,9 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   }
 
   // Step 2: compute coefficients for each line 
-  std::vector<float> l1 = compute_line_coefficients(x0, y0, x1, y1);
-  std::vector<float> l2 = compute_line_coefficients(x1, y1, x2, y2);
-  std::vector<float> l3 = compute_line_coefficients(x2, y2, x0, y0);
+  std::vector<float> l1 = compute_line_coefficients(x1, y1, x0, y0);
+  std::vector<float> l2 = compute_line_coefficients(x2, y2, x1, y1);
+  std::vector<float> l3 = compute_line_coefficients(x0, y0, x2, y2);
 
   // Step 3: for all pixels in bounding box
   for (int sx = (int)floor(xmin); sx <= (int)floor(xmax); sx++) {
@@ -419,8 +435,8 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
 
       // determine whether pixel center is in triangle 
       // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
-      if (((l1[0] * xcenter) + (l1[1] * ycenter) + l1[2]) >= 0) {
-        if (((l2[0] * xcenter) + (l2[1] * ycenter) + l2[2]) >= 0) {
+      if (((l1[0] * xcenter) + (l1[1] * ycenter) + l1[2]) <= 0) {
+        if (((l2[0] * xcenter) + (l2[1] * ycenter) + l2[2]) <= 0) {
           if (((l3[0] * xcenter) + (l2[1] * ycenter) + l2[2]) <= 0) {
             fill_pixel(sx, sy, color);
           }

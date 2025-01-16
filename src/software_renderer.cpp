@@ -385,16 +385,13 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               float x1, float y1,
                                               float x2, float y2,
                                               Color color ) {
-  // Task 1: 
-  // Implement triangle rasterization
+  // compute boundary box
+  float xmin = x0 < x1? (x0 < x2 ? x0 : x2) : (x1 < x2 ? x1 : x2);
+  float xmax = x0 > x1? (x0 > x2 ? x0 : x2) : (x1 > x2 ? x1 : x2);
+  float ymin = y0 < y1? (y0 < y2 ? y0 : y2) : (y1 < y2 ? y1 : y2);
+  float ymax = y0 > y1? (y0 > y2 ? y0 : y2) : (y1 > y2 ? y1 : y2);
 
-  // Step 1: compute boundary box
-  // boundary = the minimum x/y coord to the max x/y coord
-  float xmin = x0 < x1? (x0 < x2 ? x0 : x2) : (x1 < x2 ? x1 : x2);  //min(x0, x1, x2);
-  float xmax = x0 > x1? (x0 > x2 ? x0 : x2) : (x1 > x2 ? x1 : x2);  //max(x0, x1, x2);
-  float ymin = y0 < y1? (y0 < y2 ? y0 : y2) : (y1 < y2 ? y1 : y2);  //min(y0, y1, y2);
-  float ymax = y0 > y1? (y0 > y2 ? y0 : y2) : (y1 > y2 ? y1 : y2);  //max(y0, y1, y2);
-
+  // make sure we always start at leftmost vertex
   if (xmin == x1) {
     float temp = x0;
     x0 = x1;
@@ -411,9 +408,9 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
     y2 = temp;
   }
 
-  // if counterclock-wise, switch points 1 and 2
+  // if vertices are clock-wise, switch points 1 and 2
   float orientation = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
-  if (orientation > 0) {
+  if (orientation < 0) {
     float temp = x1;
     x1 = x2;
     x2 = temp;
@@ -422,19 +419,19 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
     y2 = temp;
   }
 
-  // Step 2: compute coefficients for each line 
-  std::vector<float> l1 = compute_line_coefficients(x1, y1, x0, y0);
-  std::vector<float> l2 = compute_line_coefficients(x2, y2, x1, y1);
-  std::vector<float> l3 = compute_line_coefficients(x0, y0, x2, y2);
+  // compute coefficients for each line 
+  std::vector<float> l1 = compute_line_coefficients(x0, y0, x1, y1);
+  std::vector<float> l2 = compute_line_coefficients(x1, y1, x2, y2);
+  std::vector<float> l3 = compute_line_coefficients(x2, y2, x0, y0);
 
-  // Step 3: for all pixels in bounding box
+  // for all pixels in bounding box
   for (int sx = (int)floor(xmin); sx <= (int)floor(xmax); sx++) {
     for (int sy = (int)floor(ymin); sy <= (int)floor(ymax); sy++) {
+      // compute pixel center
       float xcenter = (float)sx + 0.5f;
       float ycenter = (float)sy + 0.5f;
 
-      // determine whether pixel center is in triangle 
-      // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
+      // determine whether pixel center is in triangle by checking each line
       if (((l1[0] * xcenter) + (l1[1] * ycenter) + l1[2]) <= 0) {
         if (((l2[0] * xcenter) + (l2[1] * ycenter) + l2[2]) <= 0) {
           if (((l3[0] * xcenter) + (l3[1] * ycenter) + l3[2]) <= 0) {

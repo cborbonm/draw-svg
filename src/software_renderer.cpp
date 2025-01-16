@@ -373,7 +373,7 @@ std::vector<float> SoftwareRendererImp::compute_line_coefficients(float x0, floa
   std::vector<float> line_coefficients;
   float A = y1 - y0;
   float B = x0 - x1;
-  float C = (y0 * (x1 - x0)) + (x0 * (y1 - y0));
+  float C = (y0 * (x1 - x0)) - (x0 * (y1 - y0));
   line_coefficients.push_back(A);
   line_coefficients.push_back(B);
   line_coefficients.push_back(C);
@@ -390,29 +390,39 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
 
   // Step 1: compute boundary box
   // boundary = the minimum x/y coord to the max x/y coord
-  float xmin = min(x0, x1, x2);
-  float xmax = max(x0, x1, x2);
-  float ymin = min(y0, y1, y2);
-  float ymax = max(y0, y1, y2);
+  float xmin = x0 < x1? (x0 < x2 ? x0 : x2) : (x1 < x2 ? x1 : x2);  //min(x0, x1, x2);
+  float xmax = x0 > x1? (x0 > x2 ? x0 : x2) : (x1 > x2 ? x1 : x2);  //max(x0, x1, x2);
+  float ymin = y0 < y1? (y0 < y2 ? y0 : y2) : (y1 < y2 ? y1 : y2);  //min(y0, y1, y2);
+  float ymax = y0 > y1? (y0 > y2 ? y0 : y2) : (y1 > y2 ? y1 : y2);  //max(y0, y1, y2);
+
+  // if counterclock-wise, switch points 1 and 2
+  float orientation = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
+  if (orientation > 0) {
+    float temp = x1;
+    x1 = x2;
+    x2 = temp;
+    temp = y1;
+    y1 = y2;
+    y2 = temp;
+  }
 
   // Step 2: compute coefficients for each line 
-  std::vector<float> L01 = compute_line_coefficients(x0, y0, x1, y1);
-  std::vector<float> L12 = compute_line_coefficients(x1, y1, x2, y2);
-  std::vector<float> L20 = compute_line_coefficients(x2, y2, x0, y0);
+  std::vector<float> l1 = compute_line_coefficients(x0, y0, x1, y1);
+  std::vector<float> l2 = compute_line_coefficients(x1, y1, x2, y2);
+  std::vector<float> l3 = compute_line_coefficients(x2, y2, x0, y0);
 
-  // Step 3: for all pixels 
-  for (int xsample = floor(xmin); xsample <= floor(xmax); xsample++) {
-    for (int ysample = floor(ymin); ysample <= floor(ymax); ysample++) {
-      // compute center of the pixel (x + 0.5, y + 0.5) using floor of values
-      float xcenter = floor(xsample) + 0.5f;
-      float ycenter = floor(ysample) + 0.5f; 
+  // Step 3: for all pixels in bounding box
+  for (int sx = (int)floor(xmin); sx <= (int)floor(xmax); sx++) {
+    for (int sy = (int)floor(ymin); sy <= (int)floor(ymax); sy++) {
+      float xcenter = (float)sx + 0.5f;
+      float ycenter = (float)sy + 0.5f;
 
       // determine whether pixel center is in triangle 
       // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
-      if (((L01[0] * xcenter) + (L01[1] * ycenter) + L01[2]) < 0) {
-        if (((L12[0] * xcenter) + (L12[1] * ycenter) + L12[2]) < 0) {
-          if (((L20[0] * xcenter) + (L20[1] * ycenter) + L20[2]) < 0) {
-            fill_pixel(xsample, ysample, color);
+      if (((l1[0] * xcenter) + (l1[1] * ycenter) + l1[2]) >= 0) {
+        if (((l2[0] * xcenter) + (l2[1] * ycenter) + l2[2]) >= 0) {
+          if (((l3[0] * xcenter) + (l2[1] * ycenter) + l2[2]) <= 0) {
+            fill_pixel(sx, sy, color);
           }
         }
       }

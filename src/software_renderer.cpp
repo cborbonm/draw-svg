@@ -437,14 +437,13 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
       // for all lines, check that L1, L2, L3 < 0 --> point is inside the line 
       if (((l1[0] * xcenter) + (l1[1] * ycenter) + l1[2]) <= 0) {
         if (((l2[0] * xcenter) + (l2[1] * ycenter) + l2[2]) <= 0) {
-          if (((l3[0] * xcenter) + (l2[1] * ycenter) + l2[2]) <= 0) {
+          if (((l3[0] * xcenter) + (l3[1] * ycenter) + l3[2]) <= 0) {
             fill_pixel(sx, sy, color);
           }
         }
       }
     }
   }
-
 
   // Advanced Task
   // Implementing Triangle Edge Rules

@@ -397,15 +397,15 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   
 
   // if vertices are clock-wise, switch points 1 and 2
-  // float orientation = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
-  // if (orientation < 0) {
-  //   float temp = x1;
-  //   x1 = x2;
-  //   x2 = temp;
-  //   temp = y1;
-  //   y1 = y2;
-  //   y2 = temp;
-  // }
+  float orientation = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
+  if (orientation < 0) {
+    float temp = x1;
+    x1 = x2;
+    x2 = temp;
+    temp = y1;
+    y1 = y2;
+    y2 = temp;
+  }
 
   // compute coefficients for each line 
   std::vector<float> l1 = compute_line_coefficients(x0, y0, x1, y1);

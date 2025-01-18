@@ -29,7 +29,11 @@ class SoftwareRenderer : public SVGRenderer {
   SoftwareRenderer( ) : sample_rate (1) { }
 
   // Free used resources
-  virtual ~SoftwareRenderer( ) { }
+  virtual ~SoftwareRenderer( ) { 
+	if (sample_buffer) {
+		free(sample_buffer);
+	}
+  }
 
   // Draw an svg input to pixel buffer
   virtual void draw_svg( SVG& svg ) = 0;
@@ -75,6 +79,11 @@ class SoftwareRenderer : public SVGRenderer {
 
   // SVG coordinates to screen space coordinates
   Matrix3x3 canvas_to_screen;
+
+  // super sampling buffer
+  unsigned char* sample_buffer; 
+  // Super sample buffer dimension
+  size_t s_width; size_t s_height;
 
 }; // class SoftwareRenderer
 

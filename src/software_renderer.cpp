@@ -17,6 +17,24 @@ namespace CS248 {
 // fill a sample location with color
 void SoftwareRendererImp::fill_sample(int sx, int sy, const Color &color) {
   // Task 2: implement this function
+
+  // check bounds of sample coords with width and height of ac
+	if (sx < 0 || sx >= s_width) return;
+	if (sy < 0 || sy >= s_height) return;
+
+  Color pixel_color;
+	float inv255 = 1.0 / 255.0;
+	pixel_color.r = sample_buffer[4 * (sx + sy * s_width)] * inv255;
+	pixel_color.g = sample_buffer[4 * (sx + sy * s_width) + 1] * inv255;
+	pixel_color.b = sample_buffer[4 * (sx + sy * s_width) + 2] * inv255;
+	pixel_color.a = sample_buffer[4 * (sx + sy * s_width) + 3] * inv255;
+
+  pixel_color = ref->alpha_blending_helper(pixel_color, color);
+
+  sample_buffer[4 * (sx + sy * s_width)] = (uint8_t)(pixel_color.r * 255);
+  sample_buffer[4 * (sx + sy * s_width) + 1] = (uint8_t)(pixel_color.g * 255);
+  sample_buffer[4 * (sx + sy * s_width) + 2] = (uint8_t)(pixel_color.b * 255);
+  sample_buffer[4 * (sx + sy * s_width) + 3]= (uint8_t)(pixel_color.a * 255);
 }
 
 // fill samples in the entire pixel specified by pixel coordinates
@@ -25,22 +43,28 @@ void SoftwareRendererImp::fill_pixel(int x, int y, const Color &color) {
 	// Task 2: Re-implement this function
 
 	// check bounds
-	if (x < 0 || x >= width) return;
-	if (y < 0 || y >= height) return;
+	// if (x < 0 || x >= width) return;
+	// if (y < 0 || y >= height) return;
 
-	Color pixel_color;
-	float inv255 = 1.0 / 255.0;
-	pixel_color.r = pixel_buffer[4 * (x + y * width)] * inv255;
-	pixel_color.g = pixel_buffer[4 * (x + y * width) + 1] * inv255;
-	pixel_color.b = pixel_buffer[4 * (x + y * width) + 2] * inv255;
-	pixel_color.a = pixel_buffer[4 * (x + y * width) + 3] * inv255;
+	// Color pixel_color;
+	// float inv255 = 1.0 / 255.0;
+	// pixel_color.r = pixel_buffer[4 * (x + y * width)] * inv255;
+	// pixel_color.g = pixel_buffer[4 * (x + y * width) + 1] * inv255;
+	// pixel_color.b = pixel_buffer[4 * (x + y * width) + 2] * inv255;
+	// pixel_color.a = pixel_buffer[4 * (x + y * width) + 3] * inv255;
 
-	pixel_color = ref->alpha_blending_helper(pixel_color, color);
+	// pixel_color = ref->alpha_blending_helper(pixel_color, color);
 
-	pixel_buffer[4 * (x + y * width)] = (uint8_t)(pixel_color.r * 255);
-	pixel_buffer[4 * (x + y * width) + 1] = (uint8_t)(pixel_color.g * 255);
-	pixel_buffer[4 * (x + y * width) + 2] = (uint8_t)(pixel_color.b * 255);
-	pixel_buffer[4 * (x + y * width) + 3] = (uint8_t)(pixel_color.a * 255);
+	// pixel_buffer[4 * (x + y * width)] = (uint8_t)(pixel_color.r * 255);
+	// pixel_buffer[4 * (x + y * width) + 1] = (uint8_t)(pixel_color.g * 255);
+	// pixel_buffer[4 * (x + y * width) + 2] = (uint8_t)(pixel_color.b * 255);
+	// pixel_buffer[4 * (x + y * width) + 3] = (uint8_t)(pixel_color.a * 255);
+
+  for (int i = 0; i < sqrt(sample_rate); i++) {
+    for (int j = 0; j < sqrt(sample_rate); j++) {
+      fill_sample(x * sqrt(sample_rate) + i, y * sqrt(sample_rate) + j, color);
+    }
+  }
 
 }
 
@@ -78,8 +102,17 @@ void SoftwareRendererImp::set_sample_rate( size_t sample_rate ) {
 
   // Task 2: 
   // You may want to modify this for supersampling support
+  // freeing the buffer 
   this->sample_rate = sample_rate;
+  this->s_width = this->width * sqrt(sample_rate);
+  this->s_height = this->height * sqrt(sample_rate);
 
+  if (this->sample_buffer) {
+    free(this->sample_buffer);
+  }
+  // allocating for the sample buffer 
+  this->sample_buffer = (unsigned char *)malloc(this->width * this->height * 4 * sample_rate);
+  memset(this->sample_buffer, 255, 4 * this->s_width * this->s_height);
 }
 
 void SoftwareRendererImp::set_pixel_buffer( unsigned char* pixel_buffer,
@@ -91,6 +124,13 @@ void SoftwareRendererImp::set_pixel_buffer( unsigned char* pixel_buffer,
   this->width = width;
   this->height = height;
 
+  this->s_width = width * sqrt(this->sample_rate);
+  this->s_height = height * sqrt(this->sample_rate);
+  if (this->sample_buffer) {
+    free(this->sample_buffer);
+  }
+  this->sample_buffer = (unsigned char *)malloc(this->s_width * this->s_height * 4);
+  memset(this->sample_buffer, 255, 4 * this->s_width * this->s_height);
 }
 
 void SoftwareRendererImp::draw_element( SVGElement* element ) {
@@ -443,8 +483,24 @@ void SoftwareRendererImp::resolve( void ) {
 
   // Task 2: 
   // Implement supersampling
-  // You may also need to modify other functions marked with "Task 2".
-  return;
+
+  // iterate over every pixel and "average" all the samples
+  for (int x = 0; x < width; x++) {     // x coord
+    for (int y = 0; y < height; y++) {  // y coord
+      for (int k = 0; k < 4; k++) {     // color offset
+        float color = 0;
+        for (int i = 0; i < sqrt(sample_rate); i++) {    // x sample offset
+          for (int j = 0; j < sqrt(sample_rate); j++) {  // y sample offset
+            int sx = x * sqrt(sample_rate) + i;
+            int sy = y * sqrt(sample_rate) + j;
+            color += sample_buffer[4 * (sx + sy * s_width) + k];
+          }
+        }
+        color /= sample_rate;
+        pixel_buffer[4 * (x + y * width) + k] = color;
+      }
+    }
+  }
 
 }
 
